@@ -48,6 +48,7 @@ const Main: FC<IMainProps> = () => {
     detail: Resolution.low,
     transfer_methods: [TransferMethod.local_file],
   })
+  const [speechToText, setSpeechToText] = useState<boolean>(false)
 
   useEffect(() => {
     if (APP_INFO?.title)
@@ -101,7 +102,9 @@ const Main: FC<IMainProps> = () => {
 
   const conversationName = currConversationInfo?.name || t('app.chat.newChatDefaultName') as string
   const conversationIntroduction = currConversationInfo?.introduction || ''
-
+  const conversationSuggestedQuestions
+    = currConversationInfo?.suggestedQuestions || []
+  // 切换对话
   const handleConversationSwitch = () => {
     if (!inited)
       return
@@ -140,10 +143,11 @@ const Main: FC<IMainProps> = () => {
           })
           newChatList.push({
             id: item.id,
-            content: item.answer,
+            content: item.answer + 22,
             agent_thoughts: addFileInfos(item.agent_thoughts ? sortAgentSorts(item.agent_thoughts) : item.agent_thoughts, item.message_files),
             feedback: item.feedback,
             isAnswer: true,
+            citation: item.retriever_resources,
             message_files: item.message_files?.filter((file: any) => file.belongs_to === 'assistant') || [],
           })
         })
@@ -192,14 +196,16 @@ const Main: FC<IMainProps> = () => {
         name: t('app.chat.newChatDefaultName'),
         inputs: newConversationInputs,
         introduction: conversationIntroduction,
+        suggestedQuestions: conversationSuggestedQuestions,
       })
     }))
   }
 
   // sometime introduction is not applied to state
-  const generateNewChatListWithOpenStatement = (introduction?: string, inputs?: Record<string, any> | null) => {
+  const generateNewChatListWithOpenStatement = (introduction?: string, inputs?: Record<string, any> | null, suggestedQuestions?: string[]) => {
     let calculatedIntroduction = introduction || conversationIntroduction || ''
     const calculatedPromptVariables = inputs || currInputs || null
+    const caculatedSuggestedQuestions = suggestedQuestions || conversationSuggestedQuestions
     if (calculatedIntroduction && calculatedPromptVariables)
       calculatedIntroduction = replaceVarWithValues(calculatedIntroduction, promptConfig?.prompt_variables || [], calculatedPromptVariables)
 
@@ -209,6 +215,7 @@ const Main: FC<IMainProps> = () => {
       isAnswer: true,
       feedbackDisabled: true,
       isOpeningStatement: isShowPrompt,
+      suggestedQuestions: caculatedSuggestedQuestions,
     }
     if (calculatedIntroduction)
       return [openStatement]
@@ -237,11 +244,12 @@ const Main: FC<IMainProps> = () => {
         const isNotNewConversation = conversations.some(item => item.id === _conversationId)
 
         // fetch new conversation info
-        const { user_input_form, opening_statement: introduction, file_upload, system_parameters }: any = appParams
+        const { user_input_form, opening_statement: introduction, file_upload, system_parameters, suggested_questions: suggestedQuestions, speech_to_text: speechToText }: any = appParams
         setLocaleOnClient(APP_INFO.default_language, true)
         setNewConversationInfo({
           name: t('app.chat.newChatDefaultName'),
           introduction,
+          suggestedQuestions,
         })
         const prompt_variables = userInputsFormToPromptVariables(user_input_form)
         setPromptConfig({
@@ -252,6 +260,7 @@ const Main: FC<IMainProps> = () => {
           ...file_upload?.image,
           image_file_size_limit: system_parameters?.system_parameters || 0,
         })
+        setSpeechToText(speechToText)
         setConversationList(conversations as ConversationItem[])
 
         if (isNotNewConversation)
@@ -664,6 +673,7 @@ const Main: FC<IMainProps> = () => {
                     isResponding={isResponding}
                     checkCanSend={checkCanSend}
                     visionConfig={visionConfig}
+                    speechToTextConfig={speechToText}
                   />
                 </div>
               </div>)
