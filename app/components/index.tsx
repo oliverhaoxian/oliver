@@ -49,10 +49,11 @@ const Main: FC<IMainProps> = () => {
     transfer_methods: [TransferMethod.local_file],
   })
 
-  useEffect(() => {
-    if (APP_INFO?.title)
-      document.title = `${APP_INFO.title} - jumper`
-  }, [APP_INFO?.title])
+  // useEffect(() => {
+  //   if (APP_INFO?.title)
+      
+  // }, [APP_INFO?.title])
+  document.title = `jumper`
 
   // onData change thought (the produce obj). https://github.com/immerjs/immer/issues/576
   useEffect(() => {
